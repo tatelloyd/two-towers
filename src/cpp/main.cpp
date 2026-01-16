@@ -491,7 +491,7 @@ int main(int argc, char* argv[]) {
     sigaction(SIGINT, &sa, nullptr);
     
     std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
-    std::cout << "║         ORTHANC AI TRACKING SYSTEM v2.0                ║\n";
+    std::cout << "║         TWO TOWERS AI TRACKING SYSTEM v2.0             ║\n";
     std::cout << "║         Anthropic Claude-Powered Security              ║\n";
     std::cout << "╚════════════════════════════════════════════════════════╝\n\n";
     

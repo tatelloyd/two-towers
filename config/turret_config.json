@@ -3,8 +3,8 @@
     "fov_horizontal": 62.2,
     "fov_vertical": 48.8,
     "resolution": {
-      "width": 640,
-      "height": 480
+      "width": 320,
+      "height": 240
     }
   },
   "servos": {
