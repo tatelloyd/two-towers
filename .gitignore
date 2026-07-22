@@ -7,7 +7,12 @@ __pycache__/
 .pytest_cache/
 
 # Build artifacts
+# colcon writes build/, install/ and log/ into the workspace root. Without
+# install/ and log/ here, a build on the Pi fills git status with thousands of
+# generated files and `git add -A` will happily commit them.
 build/
+install/
+log/
 bin/
 external/
 *.o
