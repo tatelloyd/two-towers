@@ -103,7 +103,7 @@ Two Towers demonstrates core principles of autonomous systems engineering:
 # System dependencies
 sudo apt-get update && sudo apt-get install -y \
     cmake libpigpio-dev pigpio python3-pip \
-    nlohmann-json3-dev
+    ros-humble-behaviortree-cpp
 
 # Enable pigpiod daemon (required for hardware PWM)
 sudo systemctl enable pigpiod
@@ -112,6 +112,19 @@ sudo systemctl start pigpiod
 # ROS2 Humble (if not installed)
 # Follow: https://docs.ros.org/en/humble/Installation.html
 ```
+
+BehaviorTree.CPP is a hard requirement -- the tracker is a behavior tree node
+and there is no fallback. If it is missing, the build fails at `find_package`
+rather than quietly producing a package with no tracker in it.
+
+To build on a machine with no Raspberry Pi attached (a laptop, or CI), skip
+pigpio and stub it instead:
+
+```bash
+colcon build --cmake-args -DTWO_TOWERS_SIM_GPIO=ON
+```
+
+Servo commands become no-ops; everything above the GPIO boundary is real.
 
 ### Installation
 
