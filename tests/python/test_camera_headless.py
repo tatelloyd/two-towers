@@ -70,10 +70,10 @@ def test_camera_headless():
         
         cap.release()
         
-        print(f"\n✅ Camera test completed successfully!")
+        print("\n✅ Camera test completed successfully!")
         print(f"   Working camera index: {camera_id}")
         print(f"   Test files saved in: {output_dir}/")
-        print(f"\n   Review the images/video to verify camera is working properly.")
+        print("\n   Review the images/video to verify camera is working properly.")
         
         return True
     

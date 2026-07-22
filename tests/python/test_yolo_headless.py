@@ -100,7 +100,7 @@ def test_yolo_headless():
     # Print summary
     if frame_times:
         avg_fps = 1 / (sum(frame_times) / len(frame_times))
-        print(f"\n✅ Test completed!")
+        print("\n✅ Test completed!")
         print(f"   Average FPS: {avg_fps:.1f}")
         print(f"   Frames with detections: {detection_count}/20")
         print(f"   Detection rate: {100*detection_count/20:.1f}%")
@@ -108,7 +108,7 @@ def test_yolo_headless():
         
         # Summary of all detections
         if all_detections:
-            print(f"\n📋 Detection Summary:")
+            print("\n📋 Detection Summary:")
             for frame_num, detections in all_detections:
                 print(f"   Frame {frame_num}: {', '.join(detections)}")
         
