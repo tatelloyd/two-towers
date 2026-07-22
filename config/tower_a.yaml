@@ -1,0 +1,28 @@
+# Parameters for tower A (Orthanc).
+#
+# The "/**" namespace wildcard means this file does not care which namespace
+# the nodes are launched into -- it matches /tower_a/two_towers_detector just
+# as well as any other. That is what lets tower_b.yaml be a near-copy rather
+# than a file full of hardcoded paths.
+
+/**/two_towers_detector:
+  ros__parameters:
+    enable_streaming: true
+    stream_port: 5000
+
+    # Measured horizontal and vertical field of view, in degrees, for the
+    # camera on this tower. Calibrated empirically, not taken from a datasheet.
+    #
+    # This is the geometric basis for the tracking gain: a target at normalized
+    # error e is (e * fov_horizontal) degrees off boresight, so a gain equal to
+    # the FOV would be a single-step deadbeat correction. The tracker currently
+    # runs a hand-tuned gain roughly 8x below that, deliberately detuned for a
+    # 15 Hz sensor. Deriving the gain from these numbers is a follow-up.
+    camera_fov_horizontal_deg: 62.2
+    camera_fov_vertical_deg: 48.8
+
+/**/orthanc_tracker_bt:
+  ros__parameters:
+    # BCM pin numbering, not physical header position.
+    pan_pin: 17
+    tilt_pin: 27

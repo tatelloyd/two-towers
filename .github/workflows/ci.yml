@@ -53,6 +53,18 @@ jobs:
           colcon test --event-handlers console_direct+
           colcon test-result --verbose
 
+      # Evaluate the launch descriptions without starting any nodes. This
+      # catches typos, bad substitutions and missing install rules -- the kind
+      # of mistake that otherwise only shows up on the robot, which is the
+      # worst possible place to discover it.
+      - name: Validate launch files
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          ros2 launch two_towers tower.launch.py --show-args
+          ros2 launch two_towers two_towers.launch.py --show-args
+
   # ==========================================================================
   # Static checks on the Python detector.
   #
@@ -76,7 +88,7 @@ jobs:
         run: pip install ruff==0.6.9
 
       - name: Syntax check
-        run: python -m compileall -q src/python tests/python
+        run: python -m compileall -q src/python tests/python launch
 
       - name: Lint
-        run: ruff check src/python tests/python
+        run: ruff check src/python tests/python launch
