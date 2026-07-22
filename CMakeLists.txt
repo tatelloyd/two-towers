@@ -111,7 +111,13 @@ target_link_libraries(orthanc_tracker_bt_node
 # ============================================================================
 # Manual pan/tilt jog utility. Used to verify wiring and find the mechanical
 # limits of a new turret before running the tracker against it.
-add_executable(servo_bringup tests/cpp/menu.cpp)
+#
+# SignalGenerator (sine/triangle sweeps) is only used by this tool, so it is
+# compiled into the executable rather than into turret_control.
+add_executable(servo_bringup
+  tests/cpp/menu.cpp
+  src/cpp/SignalGenerator.cpp
+)
 
 target_include_directories(servo_bringup PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp>
