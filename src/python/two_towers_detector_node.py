@@ -19,28 +19,33 @@ Key Features:
 
 ROS2 Interface:
     Publishers:
-        - /tower_a/detections (DetectionArray): Person detection coordinates
+        - detections (DetectionArray): Person detection coordinates.
+          Relative topic: launching this node into the /tower_a namespace
+          resolves it to /tower_a/detections.
 
     Parameters:
         - enable_streaming (bool, default=True): Enable Flask video server
         - stream_port (int, default=5000): Flask server port
-        - tower_id (string, default='tower_a'): Identifier for multi-tower setup
+
+    Note: there is no tower_id parameter. Tower identity comes from the
+    namespace the node is launched into, so the same binary serves any tower.
 
 Author: Tate Lloyd <tate.lloyd@yale.edu>
 License: MIT
 """
 
-import rclpy
-from rclpy.node import Node
-from two_towers.msg import Detection, DetectionArray
-from std_msgs.msg import Header
-import cv2
-import time
 import threading
+import time
 from collections import deque
-from ultralytics import YOLO
-from flask import Flask, Response
 
+import cv2
+import rclpy
+from flask import Flask, Response
+from rclpy.node import Node
+from std_msgs.msg import Header
+from ultralytics import YOLO
+
+from two_towers.msg import Detection, DetectionArray
 
 # =============================================================================
 # FLASK VIDEO STREAMING SERVER
