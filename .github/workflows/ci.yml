@@ -6,8 +6,10 @@ name: CI
 on:
   push:
     branches: [main]
+  # Deliberately unfiltered by base branch. Restricting to `branches: [main]`
+  # means a PR stacked on another PR gets no CI run at all, and a PR with zero
+  # checks is visually indistinguishable from one still queueing.
   pull_request:
-    branches: [main]
 
 jobs:
   # ==========================================================================
