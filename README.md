@@ -131,18 +131,31 @@ source install/setup.bash
 
 ### Running the System
 
-**Terminal 1 - Vision Pipeline:**
+One tower, one command:
+
 ```bash
 source venv/bin/activate
 source install/setup.bash
-ros2 run two_towers two_towers_detector_node.py
+ros2 launch two_towers tower.launch.py
 ```
 
-**Terminal 2 - Tracker Node:**
+This brings up the perception node and the behavior tree tracker together in
+the `/tower_a` namespace. To run tower B instead:
+
 ```bash
-source install/setup.bash
-ros2 run two_towers orthanc_tracker_node
+ros2 launch two_towers tower.launch.py tower_id:=tower_b
 ```
+
+Both towers at once (see the note in `launch/two_towers.launch.py` about
+inference rate on a single Pi):
+
+```bash
+ros2 launch two_towers two_towers.launch.py
+```
+
+Per-tower settings -- GPIO pins, camera FOV, stream port -- live in
+`config/tower_a.yaml` and `config/tower_b.yaml`. Neither node contains a
+tower-specific string; identity comes entirely from the launch namespace.
 
 The turret will:
 1. Scan back and forth searching for a person
@@ -206,9 +219,13 @@ two-towers/
 ├── msg/
 │   ├── Detection.msg                 # Single detection
 │   ├── DetectionArray.msg            # Array of detections
-│   └── TurretState.msg               # Tower status (for multi-agent)
+│   └── TowerStatus.msg               # Tower state (for multi-agent coordination)
+├── launch/
+│   ├── tower.launch.py               # One tower, into its own namespace
+│   └── two_towers.launch.py          # Both towers
 ├── config/
-│   └── turret_config.json            # Hardware configuration
+│   ├── tower_a.yaml                  # Tower A pins, camera calibration
+│   └── tower_b.yaml                  # Tower B pins, camera calibration
 ├── tests/
 │   ├── cpp/menu.cpp                  # Interactive servo testing
 │   └── python/test_*.py              # Vision pipeline tests

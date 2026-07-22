@@ -151,6 +151,15 @@ install(DIRECTORY src/cpp/
   FILES_MATCHING PATTERN "*.hpp"
 )
 
+# ============================================================================
+# Launch files and per-tower parameters
+# ============================================================================
+# These must land in share/, not lib/: FindPackageShare in the launch files
+# resolves against the share directory.
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Export dependencies
 ament_export_dependencies(rosidl_default_runtime)
 ament_export_libraries(turret_control)

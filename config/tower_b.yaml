@@ -1,0 +1,27 @@
+# Parameters for tower B (Barad-dur).
+#
+# Kept as a separate file rather than a diff against tower_a.yaml because the
+# two towers are physically distinct hardware: different camera units with
+# different measured FOV, and potentially different GPIO wiring. Sharing a file
+# would invite calibrating one tower and silently applying it to the other.
+
+/**/two_towers_detector:
+  ros__parameters:
+    enable_streaming: true
+
+    # Differs from tower A so both streams can run on one host during
+    # single-Pi bringup. Harmless once the towers are on separate machines.
+    stream_port: 5001
+
+    # PLACEHOLDER: copied from tower A. Re-measure once tower B's camera is
+    # physically built -- FOV varies between nominally identical webcams, and
+    # this number feeds the tracking gain.
+    camera_fov_horizontal_deg: 62.2
+    camera_fov_vertical_deg: 48.8
+
+/**/orthanc_tracker_bt:
+  ros__parameters:
+    # Distinct from tower A so both turrets can be driven from one Pi's header
+    # during bringup. If tower B ends up on its own Pi, 17/27 is fine there too.
+    pan_pin: 22
+    tilt_pin: 23
