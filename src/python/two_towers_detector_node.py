@@ -426,20 +426,23 @@ class TwoTowersDetectorNode(Node):
         # Declare ROS2 parameters
         self.declare_parameter('enable_streaming', True)
         self.declare_parameter('stream_port', 5000)
-        self.declare_parameter('tower_id', 'tower_a')
 
         self.enable_streaming = self.get_parameter('enable_streaming').value
         self.stream_port = self.get_parameter('stream_port').value
-        self.tower_id = self.get_parameter('tower_id').value
 
-        # Create detection publisher with tower-specific topic
-        topic_name = f'{self.tower_id}/detections'
+        # Which tower this node belongs to is determined by the namespace it is
+        # launched into (/tower_a, /tower_b), not by a parameter this node reads.
+        self.tower_id = self.get_namespace().strip('/') or 'tower_a'
+
+        # Publish on a RELATIVE topic; the namespace resolves it to
+        # /tower_a/detections, /tower_b/detections, etc.
         self.publisher_ = self.create_publisher(
             DetectionArray,
-            topic_name,
+            'detections',
             10  # QoS queue depth
         )
-        self.get_logger().info(f'Publishing detections to: {topic_name}')
+        self.get_logger().info(
+            f'Publishing detections to: {self.publisher_.topic_name}')
 
         # Initialize YOLO model
         self.get_logger().info('Loading YOLOv8n model...')

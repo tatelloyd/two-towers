@@ -1,0 +1,80 @@
+name: CI
+
+# Run on every push to main and on every pull request targeting it.
+# The PR trigger is the one that matters: it is what lets you require a green
+# build before merging (Settings -> Branches -> Add branch protection rule).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ==========================================================================
+  # Build the ROS2 package and run whatever tests exist.
+  #
+  # This runs in the official ROS2 Humble container, which is the same
+  # distribution the Pi runs. It will NOT catch anything that depends on real
+  # hardware timing or real servos. What it does catch is the large class of
+  # breakage that has nothing to do with hardware: malformed .msg files, CMake
+  # mistakes, missing dependencies, C++ that does not compile, and headers that
+  # moved. Historically that is where most robotics repo breakage lives.
+  # ==========================================================================
+  build:
+    runs-on: ubuntu-latest
+    container: ros:humble-ros-base
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ros-humble-behaviortree-cpp \
+            python3-colcon-common-extensions
+
+      # The runner is x86 with no Raspberry Pi and no pigpio daemon, so we build
+      # against the GPIO stubs. Everything above the GPIO boundary -- the
+      # behavior tree, the control law, message generation -- is compiled for
+      # real and is what we actually care about verifying here.
+      - name: Build
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build \
+            --event-handlers console_direct+ \
+            --cmake-args -DTWO_TOWERS_SIM_GPIO=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Test
+        shell: bash
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon test --event-handlers console_direct+
+          colcon test-result --verbose
+
+  # ==========================================================================
+  # Static checks on the Python detector.
+  #
+  # Deliberately does not import the module: that would pull in torch,
+  # ultralytics and OpenCV and turn a 30-second job into a multi-minute one.
+  # Syntax errors and lint violations are catchable without paying that cost.
+  # ==========================================================================
+  lint-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install linters
+        run: pip install ruff
+
+      - name: Syntax check
+        run: python -m compileall -q src/python tests/python
+
+      - name: Lint
+        run: ruff check src/python tests/python
