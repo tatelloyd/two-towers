@@ -312,29 +312,43 @@ private:
 // ============================================================================
 class OrthancTrackerBTNode : public rclcpp::Node {
 public:
-    OrthancTrackerBTNode() 
-        : Node("orthanc_tracker_bt"),
-          turret_(std::make_unique<Turret>(17, 27))
+    OrthancTrackerBTNode()
+        : Node("orthanc_tracker_bt")
     {
+        // GPIO assignment is per-tower hardware, so it comes from parameters
+        // rather than being baked into the binary.
+        this->declare_parameter("pan_pin", 17);
+        this->declare_parameter("tilt_pin", 27);
+        const int pan_pin = this->get_parameter("pan_pin").as_int();
+        const int tilt_pin = this->get_parameter("tilt_pin").as_int();
+
+        turret_ = std::make_unique<Turret>(pan_pin, tilt_pin);
+
         // Initialize turret
         turret_->setPanAngle(90.0);
         turret_->setTiltAngle(30.0);
-        
+
         // Setup shared state
         auto& state = TrackerState::get();
         state.turret = turret_.get();
         state.node = this;
         state.last_tick_time = std::chrono::steady_clock::now();
-        
-        // Subscribe to detections
+
+        // Subscribe to detections on a RELATIVE topic. Which tower this node
+        // belongs to is decided by the namespace it is launched into
+        // (/tower_a/detections, /tower_b/detections, ...), not by this code.
         subscription_ = this->create_subscription<two_towers::msg::DetectionArray>(
-            "orthanc/detections",
+            "detections",
             10,
             [this](two_towers::msg::DetectionArray::SharedPtr msg) {
                 TrackerState::get().latest_detections = msg;
             }
         );
-        
+
+        RCLCPP_INFO(this->get_logger(), "Pan GPIO %d, tilt GPIO %d", pan_pin, tilt_pin);
+        RCLCPP_INFO(this->get_logger(), "Subscribed to: %s",
+                    subscription_->get_topic_name());
+
         // Create BehaviorTree
         BT::BehaviorTreeFactory factory;
         factory.registerNodeType<HasPersonDetection>("HasPersonDetection");

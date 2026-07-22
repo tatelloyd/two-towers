@@ -15,16 +15,21 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-# Optional: BehaviorTree.CPP (comment out if not using BT version)
-find_package(behaviortree_cpp QUIET)
+# BehaviorTree.CPP is REQUIRED: the behavior tree node is the only tracker.
+# Previously this was QUIET, which let the build silently succeed without it.
+find_package(behaviortree_cpp REQUIRED)
 
 # Generate custom messages
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Detection.msg"
   "msg/DetectionArray.msg"
-  "msg/TurretState.msg"
+  "msg/TowerStatus.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
+
+# Build without a Raspberry Pi attached (CI, laptops, unit tests).
+# See src/cpp/sim/pigpiod_if2.h for what this substitutes.
+option(TWO_TOWERS_SIM_GPIO "Stub out pigpio instead of linking the real library" OFF)
 
 # Build Turret library (servo control)
 add_library(turret_control
@@ -37,10 +42,17 @@ target_include_directories(turret_control PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-# Link pigpiod library
-target_link_libraries(turret_control
-  pigpiod_if2
-)
+if(TWO_TOWERS_SIM_GPIO)
+  # Put the stub directory ahead of the system includes so that the unmodified
+  # `#include <pigpiod_if2.h>` in Turret.cpp resolves to sim/ instead. No source
+  # changes and no preprocessor branches in the control code itself.
+  target_include_directories(turret_control BEFORE PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp/sim>
+  )
+  message(STATUS "TWO_TOWERS_SIM_GPIO=ON - pigpio stubbed, servos will not move")
+else()
+  target_link_libraries(turret_control pigpiod_if2)
+endif()
 
 # Install the shared library to lib directory
 install(TARGETS turret_control
@@ -74,46 +86,55 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(orthanc_tracker_node "${cpp_typesupport_target}")
 
 # ============================================================================
-# C++ executable: BehaviorTree tracker node (optional)
+# C++ executable: BehaviorTree tracker node
 # ============================================================================
-if(behaviortree_cpp_FOUND)
-  add_executable(orthanc_tracker_bt_node src/cpp/orthanc_tracker_node_bt.cpp)
-  
-  target_include_directories(orthanc_tracker_bt_node PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp>
-    $<INSTALL_INTERFACE:include>
-  )
-  
-  ament_target_dependencies(orthanc_tracker_bt_node
-    rclcpp
-    std_msgs
-    behaviortree_cpp
-  )
-  
-  target_link_libraries(orthanc_tracker_bt_node
-    turret_control
-  )
-  
-  target_link_libraries(orthanc_tracker_bt_node "${cpp_typesupport_target}")
-  
-  message(STATUS "✅ BehaviorTree.CPP found - building BT tracker node")
-else()
-  message(STATUS "⚠️  BehaviorTree.CPP not found - skipping BT tracker node")
-endif()
+add_executable(orthanc_tracker_bt_node src/cpp/orthanc_tracker_node_bt.cpp)
+
+target_include_directories(orthanc_tracker_bt_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(orthanc_tracker_bt_node
+  rclcpp
+  std_msgs
+  behaviortree_cpp
+)
+
+target_link_libraries(orthanc_tracker_bt_node
+  turret_control
+  "${cpp_typesupport_target}"
+)
+
+# ============================================================================
+# C++ executable: servo bringup tool (interactive, no ROS2)
+# ============================================================================
+# Manual pan/tilt jog utility. Used to verify wiring and find the mechanical
+# limits of a new turret before running the tracker against it.
+#
+# SignalGenerator (sine/triangle sweeps) is only used by this tool, so it is
+# compiled into the executable rather than into turret_control.
+add_executable(servo_bringup
+  tests/cpp/menu.cpp
+  src/cpp/SignalGenerator.cpp
+)
+
+target_include_directories(servo_bringup PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/cpp>
+)
+
+target_link_libraries(servo_bringup turret_control)
 
 # ============================================================================
 # Install C++ executables
 # ============================================================================
 
-install(TARGETS orthanc_tracker_node
+install(TARGETS
+  orthanc_tracker_node
+  orthanc_tracker_bt_node
+  servo_bringup
   DESTINATION lib/${PROJECT_NAME}
 )
-
-if(behaviortree_cpp_FOUND)
-  install(TARGETS orthanc_tracker_bt_node
-    DESTINATION lib/${PROJECT_NAME}
-  )
-endif()
 
 # ============================================================================
 # Python Setup - Install scripts directly (simpler approach)

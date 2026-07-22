@@ -1,0 +1,28 @@
+# Lint configuration for the Python vision nodes.
+#
+# Kept explicit rather than relying on ruff's defaults so that upgrading the
+# linter changes behaviour only when we choose to. CI pins the ruff version for
+# the same reason: a linter that silently gains rules turns a green pipeline red
+# on a commit that touched nothing.
+
+line-length = 100
+target-version = "py310"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes: undefined names, unused imports, bad f-strings
+    "W",   # pycodestyle warnings
+    "I",   # import ordering
+    "UP",  # pyupgrade: outdated syntax
+    "B",   # bugbear: likely bugs, mutable default args
+]
+
+ignore = [
+    "E501",  # line length: reported by the formatter, not worth failing a build over
+]
+
+[lint.per-file-ignores]
+# The headless test scripts are operator tools run by hand on the Pi. They print
+# liberally and are not imported by anything.
+"tests/python/*" = ["T201"]
